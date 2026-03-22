@@ -7,16 +7,30 @@
     isArticle,
     isQualityPost
   } = window.XArticleFilterDetector;
-  const { ensureStyles, applyToContainer, clearContainer, clearAll } = window.XArticleFilterDOM;
+  const {
+    ensureStyles,
+    ensureOverlay,
+    showOverlay,
+    hideOverlay,
+    applyToContainer,
+    clearContainer,
+    clearAll
+  } = window.XArticleFilterDOM;
   const { ensurePageControl } = window.XArticleFilterPageControls;
 
   let settings = { enabled: true, mode: 'hide', feedMode: 'articles' };
   let pageBypass = false;
   let observer = null;
-  let scanTimer = null;
+  let quietTimer = null;
+  let batchTimer = null;
   let pendingRoots = new Set();
   let lastPath = location.pathname + location.search;
   let processed = new WeakMap();
+  let isBatching = false;
+  let batchStartedAt = 0;
+
+  const QUIET_WINDOW_MS = 320;
+  const MAX_BATCH_WAIT_MS = 1200;
 
   function shouldShow(container) {
     if (isArticle(container)) return true;
@@ -45,39 +59,74 @@
     applyToContainer(container, settings.mode);
   }
 
-  function flushScan() {
-    scanTimer = null;
+  function flushBatch() {
+    quietTimer = null;
+    batchTimer = null;
+
     const roots = pendingRoots.size ? Array.from(pendingRoots) : [document];
     pendingRoots = new Set();
 
-    for (const root of roots) {
-      getCandidateContainers(root).forEach(processContainer);
+    try {
+      for (const root of roots) {
+        getCandidateContainers(root).forEach(processContainer);
+      }
+    } finally {
+      isBatching = false;
+      hideOverlay();
     }
   }
 
-  function scheduleScan(root = document) {
+  function beginBatch() {
+    if (!settings.enabled || pageBypass) return;
+    if (!isBatching) {
+      isBatching = true;
+      batchStartedAt = Date.now();
+      showOverlay();
+    }
+  }
+
+  function scheduleBatch(root = document) {
     pendingRoots.add(root instanceof Element || root instanceof Document ? root : document);
-    if (scanTimer) window.clearTimeout(scanTimer);
-    scanTimer = window.setTimeout(flushScan, 180);
+    beginBatch();
+
+    if (quietTimer) window.clearTimeout(quietTimer);
+    quietTimer = window.setTimeout(flushBatch, QUIET_WINDOW_MS);
+
+    if (!batchTimer) {
+      batchTimer = window.setTimeout(flushBatch, MAX_BATCH_WAIT_MS);
+    } else if (Date.now() - batchStartedAt >= MAX_BATCH_WAIT_MS) {
+      window.clearTimeout(batchTimer);
+      flushBatch();
+    }
   }
 
   function showAllOnPage() {
     pageBypass = true;
+    if (quietTimer) window.clearTimeout(quietTimer);
+    if (batchTimer) window.clearTimeout(batchTimer);
+    quietTimer = null;
+    batchTimer = null;
+    isBatching = false;
+    hideOverlay();
     clearAll();
   }
 
   function attachObserver() {
     observer?.disconnect();
     observer = new MutationObserver((mutations) => {
+      let sawRelevantMutation = false;
+
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof Element)) continue;
           const container = getPostContainer(node);
           if (container) pendingRoots.add(container);
           pendingRoots.add(node);
+          sawRelevantMutation = true;
         }
       }
-      if (pendingRoots.size) scheduleScan();
+
+      if (sawRelevantMutation) scheduleBatch(document);
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
@@ -90,15 +139,19 @@
         lastPath = current;
         pageBypass = false;
         processed = new WeakMap();
-        scheduleScan(document);
+        scheduleBatch(document);
       }
     }, 500);
   }
 
   async function refreshSettings() {
     settings = await getSettings();
-    if (!settings.enabled) clearAll();
-    scheduleScan(document);
+    if (!settings.enabled) {
+      clearAll();
+      hideOverlay();
+      return;
+    }
+    scheduleBatch(document);
   }
 
   function listenForChanges() {
@@ -116,6 +169,7 @@
 
   async function init() {
     ensureStyles();
+    ensureOverlay();
     ensurePageControl(showAllOnPage);
     await refreshSettings();
     attachObserver();

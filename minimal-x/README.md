@@ -9,7 +9,7 @@ A cross-browser WebExtension for Firefox and Chrome that reduces noise on X by s
   - **Articles only**
   - **Articles + quality posts**
 - Hide or collapse filtered posts
-- Debounced scanning to reduce scrollbar jitter during X re-renders
+- Batched filtering with a loading overlay to reduce scrollbar jitter during X re-renders
 - Popup toggle for enabling/disabling filtering
 - **Show all on this page** escape hatch
 - Local-only settings storage
