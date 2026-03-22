@@ -26,8 +26,7 @@
   let pendingRoots = new Set();
   let lastPath = location.pathname + location.search;
   let processed = new WeakMap();
-  let isBatching = false;
-  let batchStartedAt = 0;
+  let overlayAllowed = true;
 
   const QUIET_WINDOW_MS = 320;
   const MAX_BATCH_WAIT_MS = 1200;
@@ -42,7 +41,7 @@
     if (!(container instanceof Element)) return;
 
     const signature = getClassificationSignature(container);
-    const cacheKey = `${signature}::${settings.enabled}:${settings.mode}:${settings.feedMode}:${pageBypass}`;
+    const cacheKey = `${signature}::${settings.enabled}:${settings.feedMode}:${pageBypass}`;
     if (processed.get(container) === cacheKey) return;
     processed.set(container, cacheKey);
 
@@ -56,7 +55,7 @@
       return;
     }
 
-    applyToContainer(container, settings.mode);
+    applyToContainer(container);
   }
 
   function flushBatch() {
@@ -71,42 +70,33 @@
         getCandidateContainers(root).forEach(processContainer);
       }
     } finally {
-      isBatching = false;
       hideOverlay();
+      overlayAllowed = false;
     }
   }
 
-  function beginBatch() {
-    if (!settings.enabled || pageBypass) return;
-    if (!isBatching) {
-      isBatching = true;
-      batchStartedAt = Date.now();
+  function scheduleBatch(root = document, options = {}) {
+    pendingRoots.add(root instanceof Element || root instanceof Document ? root : document);
+
+    if (options.withOverlay && settings.enabled && !pageBypass && overlayAllowed) {
       showOverlay();
     }
-  }
-
-  function scheduleBatch(root = document) {
-    pendingRoots.add(root instanceof Element || root instanceof Document ? root : document);
-    beginBatch();
 
     if (quietTimer) window.clearTimeout(quietTimer);
     quietTimer = window.setTimeout(flushBatch, QUIET_WINDOW_MS);
 
     if (!batchTimer) {
       batchTimer = window.setTimeout(flushBatch, MAX_BATCH_WAIT_MS);
-    } else if (Date.now() - batchStartedAt >= MAX_BATCH_WAIT_MS) {
-      window.clearTimeout(batchTimer);
-      flushBatch();
     }
   }
 
   function showAllOnPage() {
     pageBypass = true;
+    overlayAllowed = false;
     if (quietTimer) window.clearTimeout(quietTimer);
     if (batchTimer) window.clearTimeout(batchTimer);
     quietTimer = null;
     batchTimer = null;
-    isBatching = false;
     hideOverlay();
     clearAll();
   }
@@ -126,7 +116,7 @@
         }
       }
 
-      if (sawRelevantMutation) scheduleBatch(document);
+      if (sawRelevantMutation) scheduleBatch(document, { withOverlay: false });
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
@@ -138,8 +128,9 @@
       if (current !== lastPath) {
         lastPath = current;
         pageBypass = false;
+        overlayAllowed = true;
         processed = new WeakMap();
-        scheduleBatch(document);
+        scheduleBatch(document, { withOverlay: true });
       }
     }, 500);
   }
@@ -149,9 +140,11 @@
     if (!settings.enabled) {
       clearAll();
       hideOverlay();
+      overlayAllowed = false;
       return;
     }
-    scheduleBatch(document);
+    processed = new WeakMap();
+    scheduleBatch(document, { withOverlay: false });
   }
 
   function listenForChanges() {
@@ -172,6 +165,8 @@
     ensureOverlay();
     ensurePageControl(showAllOnPage);
     await refreshSettings();
+    overlayAllowed = true;
+    scheduleBatch(document, { withOverlay: true });
     attachObserver();
     listenForChanges();
     resetBypassOnNavigation();

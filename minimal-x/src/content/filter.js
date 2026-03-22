@@ -1,6 +1,5 @@
 (function () {
   const FILTERED_ATTR = 'data-x-article-filtered';
-  const PLACEHOLDER_CLASS = 'x-article-filter-placeholder';
   const STYLE_ID = 'x-article-filter-style';
   const OVERLAY_ID = 'x-article-filter-overlay';
 
@@ -10,17 +9,6 @@
     style.id = STYLE_ID;
     style.textContent = `
       [${FILTERED_ATTR}="hide"] { display: none !important; }
-      [${FILTERED_ATTR}="collapse"] { opacity: 0.45; }
-      [${FILTERED_ATTR}="collapse"] > * { display: none !important; }
-      [${FILTERED_ATTR}="collapse"] .${PLACEHOLDER_CLASS} {
-        display: block !important;
-        padding: 12px 16px;
-        margin: 8px 0;
-        border: 1px dashed rgba(120,120,120,0.5);
-        border-radius: 12px;
-        font: 13px/1.4 system-ui, sans-serif;
-        color: inherit;
-      }
       .x-article-filter-control {
         position: fixed;
         right: 16px;
@@ -100,24 +88,14 @@
     if (overlay) overlay.setAttribute('data-visible', 'false');
   }
 
-  function addPlaceholder(container) {
-    if (container.querySelector(`.${PLACEHOLDER_CLASS}`)) return;
-    const placeholder = document.createElement('div');
-    placeholder.className = PLACEHOLDER_CLASS;
-    placeholder.textContent = 'Filtered non-article post';
-    container.appendChild(placeholder);
-  }
-
-  function applyToContainer(container, mode) {
+  function applyToContainer(container) {
     if (!container) return;
-    container.setAttribute(FILTERED_ATTR, mode);
-    if (mode === 'collapse') addPlaceholder(container);
+    container.setAttribute(FILTERED_ATTR, 'hide');
   }
 
   function clearContainer(container) {
     if (!container) return;
     container.removeAttribute(FILTERED_ATTR);
-    container.querySelector(`.${PLACEHOLDER_CLASS}`)?.remove();
   }
 
   function clearAll() {

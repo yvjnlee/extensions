@@ -8,8 +8,8 @@ A cross-browser WebExtension for Firefox and Chrome that reduces noise on X by s
 - Feed modes:
   - **Articles only**
   - **Articles + quality posts**
-- Hide or collapse filtered posts
-- Batched filtering with a loading overlay to reduce scrollbar jitter during X re-renders
+- Fully hides filtered posts
+- Batched filtering with a loading overlay on initial load/navigation to reduce scrollbar jitter during X re-renders
 - Popup toggle for enabling/disabling filtering
 - **Show all on this page** escape hatch
 - Local-only settings storage
@@ -59,8 +59,7 @@ Artifacts are written to `dist/` as `.zip` and `.xpi`.
 1. Open X
 2. Click the extension icon
 3. Choose **Articles only** or **+ Quality posts**
-4. Choose **Hide** or **Collapse**
-5. If something looks wrong, click **Show all on this page**
+4. If something looks wrong, click **Show all on this page**
 
 ## Permissions
 
