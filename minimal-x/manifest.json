@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "minimal-x",
-  "version": "0.1.0",
-  "description": "Show only X built-in Articles by hiding or collapsing non-article posts across x.com.",
+  "version": "0.2.0",
+  "description": "Reduce noise on X by showing only built-in Articles or strict high-signal posts.",
   "permissions": ["storage", "tabs"],
   "host_permissions": [
     "https://x.com/*",
@@ -10,7 +10,19 @@
   ],
   "action": {
     "default_title": "minimal-x",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "content_scripts": [
     {

@@ -1,14 +1,5 @@
 (function () {
-  const { api, getSettings, setSettings } = window.XArticleFilterStorage || {
-    api: typeof browser !== 'undefined' ? browser : chrome,
-    getSettings: async () => ({ enabled: true, mode: 'hide' }),
-    setSettings: async (settings) => {
-      const extApi = typeof browser !== 'undefined' ? browser : chrome;
-      await extApi.storage.local.set(settings);
-      return settings;
-    }
-  };
-
+  const { api, getSettings, setSettings } = window.XArticleFilterStorage;
   const els = {};
 
   function setPressed(button, pressed) {
@@ -20,6 +11,8 @@
     els.enabledButton.textContent = settings.enabled ? 'On' : 'Off';
     setPressed(els.hideMode, settings.mode === 'hide');
     setPressed(els.collapseMode, settings.mode === 'collapse');
+    setPressed(els.articlesMode, settings.feedMode === 'articles');
+    setPressed(els.qualityMode, settings.feedMode === 'quality');
   }
 
   async function withActiveTab(callback) {
@@ -41,7 +34,8 @@
   async function save() {
     const settings = {
       enabled: els.enabledButton.getAttribute('aria-pressed') === 'true',
-      mode: els.hideMode.getAttribute('aria-pressed') === 'true' ? 'hide' : 'collapse'
+      mode: els.hideMode.getAttribute('aria-pressed') === 'true' ? 'hide' : 'collapse',
+      feedMode: els.articlesMode.getAttribute('aria-pressed') === 'true' ? 'articles' : 'quality'
     };
     await setSettings(settings);
     els.status.textContent = 'Saved.';
@@ -52,6 +46,8 @@
     els.enabledButton = document.getElementById('enabledButton');
     els.hideMode = document.getElementById('hideMode');
     els.collapseMode = document.getElementById('collapseMode');
+    els.articlesMode = document.getElementById('articlesMode');
+    els.qualityMode = document.getElementById('qualityMode');
     els.showAllButton = document.getElementById('showAllButton');
     els.saveButton = document.getElementById('saveButton');
     els.status = document.getElementById('status');
@@ -74,6 +70,18 @@
     els.collapseMode.addEventListener('click', () => {
       setPressed(els.hideMode, false);
       setPressed(els.collapseMode, true);
+      els.status.textContent = '';
+    });
+
+    els.articlesMode.addEventListener('click', () => {
+      setPressed(els.articlesMode, true);
+      setPressed(els.qualityMode, false);
+      els.status.textContent = '';
+    });
+
+    els.qualityMode.addEventListener('click', () => {
+      setPressed(els.articlesMode, false);
+      setPressed(els.qualityMode, true);
       els.status.textContent = '';
     });
 

@@ -2,7 +2,8 @@
   const api = typeof browser !== 'undefined' ? browser : chrome;
   const defaultSettings = {
     enabled: true,
-    mode: 'hide'
+    mode: 'hide',
+    feedMode: 'articles'
   };
 
   async function getSettings() {
