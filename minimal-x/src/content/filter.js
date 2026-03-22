@@ -1,5 +1,6 @@
 (function () {
   const FILTERED_ATTR = 'data-x-article-filtered';
+  const PENDING_ATTR = 'data-x-article-pending';
   const STYLE_ID = 'x-article-filter-style';
   const OVERLAY_ID = 'x-article-filter-overlay';
 
@@ -8,7 +9,10 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      [${FILTERED_ATTR}="hide"] { display: none !important; }
+      [${PENDING_ATTR}="true"],
+      [${FILTERED_ATTR}="hide"] {
+        display: none !important;
+      }
       .x-article-filter-control {
         position: fixed;
         right: 16px;
@@ -88,18 +92,25 @@
     if (overlay) overlay.setAttribute('data-visible', 'false');
   }
 
+  function markPending(container) {
+    if (!container) return;
+    container.setAttribute(PENDING_ATTR, 'true');
+  }
+
   function applyToContainer(container) {
     if (!container) return;
+    container.removeAttribute(PENDING_ATTR);
     container.setAttribute(FILTERED_ATTR, 'hide');
   }
 
   function clearContainer(container) {
     if (!container) return;
+    container.removeAttribute(PENDING_ATTR);
     container.removeAttribute(FILTERED_ATTR);
   }
 
   function clearAll() {
-    document.querySelectorAll(`[${FILTERED_ATTR}]`).forEach(clearContainer);
+    document.querySelectorAll(`[${FILTERED_ATTR}], [${PENDING_ATTR}]`).forEach(clearContainer);
   }
 
   window.XArticleFilterDOM = {
@@ -107,9 +118,11 @@
     ensureOverlay,
     showOverlay,
     hideOverlay,
+    markPending,
     applyToContainer,
     clearContainer,
     clearAll,
-    FILTERED_ATTR
+    FILTERED_ATTR,
+    PENDING_ATTR
   };
 })();

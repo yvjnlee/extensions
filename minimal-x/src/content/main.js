@@ -12,6 +12,7 @@
     ensureOverlay,
     showOverlay,
     hideOverlay,
+    markPending,
     applyToContainer,
     clearContainer,
     clearAll
@@ -28,13 +29,19 @@
   let processed = new WeakMap();
   let overlayAllowed = true;
 
-  const QUIET_WINDOW_MS = 320;
-  const MAX_BATCH_WAIT_MS = 1200;
+  const QUIET_WINDOW_MS = 220;
+  const MAX_BATCH_WAIT_MS = 900;
 
   function shouldShow(container) {
     if (isArticle(container)) return true;
     if (settings.feedMode === 'quality' && isQualityPost(container)) return true;
     return false;
+  }
+
+  function hideCandidates(root = document) {
+    getCandidateContainers(root).forEach((container) => {
+      if (!pageBypass && settings.enabled) markPending(container);
+    });
   }
 
   function processContainer(container) {
@@ -76,7 +83,12 @@
   }
 
   function scheduleBatch(root = document, options = {}) {
-    pendingRoots.add(root instanceof Element || root instanceof Document ? root : document);
+    const validRoot = root instanceof Element || root instanceof Document ? root : document;
+    pendingRoots.add(validRoot);
+
+    if (settings.enabled && !pageBypass) {
+      hideCandidates(validRoot);
+    }
 
     if (options.withOverlay && settings.enabled && !pageBypass && overlayAllowed) {
       showOverlay();
@@ -110,13 +122,24 @@
         for (const node of mutation.addedNodes) {
           if (!(node instanceof Element)) continue;
           const container = getPostContainer(node);
-          if (container) pendingRoots.add(container);
-          pendingRoots.add(node);
-          sawRelevantMutation = true;
+          if (container) {
+            markPending(container);
+            pendingRoots.add(container);
+            sawRelevantMutation = true;
+          }
+
+          const nested = getCandidateContainers(node);
+          if (nested.length) {
+            nested.forEach(markPending);
+            pendingRoots.add(node);
+            sawRelevantMutation = true;
+          }
         }
       }
 
-      if (sawRelevantMutation) scheduleBatch(document, { withOverlay: false });
+      if (sawRelevantMutation) {
+        scheduleBatch(document, { withOverlay: false });
+      }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
@@ -137,13 +160,15 @@
 
   async function refreshSettings() {
     settings = await getSettings();
+    processed = new WeakMap();
+
     if (!settings.enabled) {
       clearAll();
       hideOverlay();
       overlayAllowed = false;
       return;
     }
-    processed = new WeakMap();
+
     scheduleBatch(document, { withOverlay: false });
   }
 
@@ -166,6 +191,7 @@
     ensurePageControl(showAllOnPage);
     await refreshSettings();
     overlayAllowed = true;
+    hideCandidates(document);
     scheduleBatch(document, { withOverlay: true });
     attachObserver();
     listenForChanges();
