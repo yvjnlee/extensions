@@ -10,6 +10,7 @@ A cross-browser WebExtension for Firefox and Chrome that reduces noise on X by s
   - **Articles + quality posts**
 - Fully hides filtered posts
 - Aggressively pre-hides feed posts until classified, then reveals only allowed content
+- Once a post is filtered, it stays hidden for the page session unless you click **Show all on this page**
 - Uses a loading overlay on initial load/navigation to reduce scrollbar jitter during X re-renders
 - Popup toggle for enabling/disabling filtering
 - **Show all on this page** escape hatch

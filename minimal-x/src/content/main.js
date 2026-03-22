@@ -47,15 +47,20 @@
   function processContainer(container) {
     if (!(container instanceof Element)) return;
 
-    const signature = getClassificationSignature(container);
-    const cacheKey = `${signature}::${settings.enabled}:${settings.feedMode}:${pageBypass}`;
-    if (processed.get(container) === cacheKey) return;
-    processed.set(container, cacheKey);
-
     if (pageBypass || !settings.enabled) {
       clearContainer(container);
       return;
     }
+
+    if (container.getAttribute('data-x-article-filtered') === 'hide') {
+      container.removeAttribute('data-x-article-pending');
+      return;
+    }
+
+    const signature = getClassificationSignature(container);
+    const cacheKey = `${signature}::${settings.enabled}:${settings.feedMode}:${pageBypass}`;
+    if (processed.get(container) === cacheKey) return;
+    processed.set(container, cacheKey);
 
     if (shouldShow(container)) {
       clearContainer(container);
