@@ -2,7 +2,10 @@
   const { api, getSettings } = window.XArticleFilterStorage;
   const {
     getPostContainer,
+    getFeedRowContainer,
+    getTimelineRoot,
     getCandidateContainers,
+    getCandidateRows,
     getClassificationSignature,
     isArticle,
     isQualityPost
@@ -10,8 +13,11 @@
   const {
     ensureStyles,
     ensureOverlay,
+    ensureEmptyState,
     showOverlay,
     hideOverlay,
+    showEmptyState,
+    hideEmptyState,
     markPending,
     applyToContainer,
     clearContainer,
@@ -39,35 +45,57 @@
   }
 
   function hideCandidates(root = document) {
-    getCandidateContainers(root).forEach((container) => {
-      if (!pageBypass && settings.enabled) markPending(container);
+    getCandidateRows(root).forEach((row) => {
+      if (!pageBypass && settings.enabled) markPending(row);
     });
   }
 
   function processContainer(container) {
-    if (!(container instanceof Element)) return;
+    if (!(container instanceof Element)) return false;
+    const row = getFeedRowContainer(container) || container;
 
     if (pageBypass || !settings.enabled) {
-      clearContainer(container);
-      return;
+      clearContainer(row);
+      return true;
     }
 
-    if (container.getAttribute('data-x-article-filtered') === 'hide') {
-      container.removeAttribute('data-x-article-pending');
-      return;
+    if (row.getAttribute('data-x-article-filtered') === 'hide') {
+      row.removeAttribute('data-x-article-pending');
+      return false;
     }
 
     const signature = getClassificationSignature(container);
     const cacheKey = `${signature}::${settings.enabled}:${settings.feedMode}:${pageBypass}`;
-    if (processed.get(container) === cacheKey) return;
-    processed.set(container, cacheKey);
+    if (processed.get(row) === cacheKey) {
+      return row.getAttribute('data-x-article-filtered') !== 'hide';
+    }
+    processed.set(row, cacheKey);
 
     if (shouldShow(container)) {
-      clearContainer(container);
+      clearContainer(row);
+      return true;
+    }
+
+    applyToContainer(row);
+    return false;
+  }
+
+  function updateEmptyState() {
+    const timelineRoot = getTimelineRoot(document);
+    if (!timelineRoot || pageBypass || !settings.enabled) {
+      hideEmptyState();
       return;
     }
 
-    applyToContainer(container);
+    ensureEmptyState(timelineRoot);
+    const rows = getCandidateRows(timelineRoot);
+    const hasVisibleMatch = rows.some((row) => row.getAttribute('data-x-article-filtered') !== 'hide');
+
+    if (rows.length > 0 && !hasVisibleMatch) {
+      showEmptyState(timelineRoot);
+    } else {
+      hideEmptyState();
+    }
   }
 
   function flushBatch() {
@@ -81,6 +109,7 @@
       for (const root of roots) {
         getCandidateContainers(root).forEach(processContainer);
       }
+      updateEmptyState();
     } finally {
       hideOverlay();
       overlayAllowed = false;
@@ -126,16 +155,16 @@
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof Element)) continue;
-          const container = getPostContainer(node);
-          if (container) {
-            markPending(container);
-            pendingRoots.add(container);
+          const row = getFeedRowContainer(node);
+          if (row) {
+            markPending(row);
+            pendingRoots.add(row);
             sawRelevantMutation = true;
           }
 
-          const nested = getCandidateContainers(node);
-          if (nested.length) {
-            nested.forEach(markPending);
+          const nestedRows = getCandidateRows(node);
+          if (nestedRows.length) {
+            nestedRows.forEach(markPending);
             pendingRoots.add(node);
             sawRelevantMutation = true;
           }
@@ -143,7 +172,7 @@
       }
 
       if (sawRelevantMutation) {
-        scheduleBatch(document, { withOverlay: false });
+        scheduleBatch(getTimelineRoot(document) || document, { withOverlay: false });
       }
     });
 
@@ -158,7 +187,7 @@
         pageBypass = false;
         overlayAllowed = true;
         processed = new WeakMap();
-        scheduleBatch(document, { withOverlay: true });
+        scheduleBatch(getTimelineRoot(document) || document, { withOverlay: true });
       }
     }, 500);
   }
@@ -174,7 +203,7 @@
       return;
     }
 
-    scheduleBatch(document, { withOverlay: false });
+    scheduleBatch(getTimelineRoot(document) || document, { withOverlay: false });
   }
 
   function listenForChanges() {
@@ -194,10 +223,14 @@
     ensureStyles();
     ensureOverlay();
     ensurePageControl(showAllOnPage);
+
+    const timelineRoot = getTimelineRoot(document);
+    if (timelineRoot) ensureEmptyState(timelineRoot);
+
     await refreshSettings();
     overlayAllowed = true;
-    hideCandidates(document);
-    scheduleBatch(document, { withOverlay: true });
+    hideCandidates(timelineRoot || document);
+    scheduleBatch(timelineRoot || document, { withOverlay: true });
     attachObserver();
     listenForChanges();
     resetBypassOnNavigation();

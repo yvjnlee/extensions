@@ -3,6 +3,7 @@
   const PENDING_ATTR = 'data-x-article-pending';
   const STYLE_ID = 'x-article-filter-style';
   const OVERLAY_ID = 'x-article-filter-overlay';
+  const EMPTY_STATE_ID = 'x-article-filter-empty-state';
 
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -42,24 +43,35 @@
       #${OVERLAY_ID}[data-visible="true"] {
         display: flex;
       }
-      #${OVERLAY_ID} .x-article-filter-overlay-card {
+      #${OVERLAY_ID} .x-article-filter-overlay-card,
+      #${EMPTY_STATE_ID} {
         min-width: 220px;
-        padding: 14px 16px;
-        border-radius: 14px;
+        padding: 18px 20px;
+        border-radius: 16px;
         background: color-mix(in srgb, Canvas 92%, transparent);
         border: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
         box-shadow: 0 12px 40px rgba(0,0,0,0.18);
-        font: 13px/1.4 system-ui, sans-serif;
+        font: 13px/1.45 system-ui, sans-serif;
         color: CanvasText;
         text-align: center;
       }
-      #${OVERLAY_ID} .x-article-filter-overlay-title {
+      #${OVERLAY_ID} .x-article-filter-overlay-title,
+      #${EMPTY_STATE_ID} .x-article-filter-empty-title {
         display: block;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
         font-weight: 600;
       }
-      #${OVERLAY_ID} .x-article-filter-overlay-copy {
+      #${OVERLAY_ID} .x-article-filter-overlay-copy,
+      #${EMPTY_STATE_ID} .x-article-filter-empty-copy {
         color: GrayText;
+      }
+      #${EMPTY_STATE_ID} {
+        display: none;
+        margin: 16px auto;
+        max-width: 460px;
+      }
+      #${EMPTY_STATE_ID}[data-visible="true"] {
+        display: block;
       }
     `;
     document.documentElement.appendChild(style);
@@ -83,6 +95,24 @@
     return overlay;
   }
 
+  function ensureEmptyState(parent) {
+    if (!parent) return null;
+    let empty = document.getElementById(EMPTY_STATE_ID);
+    if (!empty) {
+      empty = document.createElement('div');
+      empty.id = EMPTY_STATE_ID;
+      empty.setAttribute('data-visible', 'false');
+      empty.innerHTML = `
+        <span class="x-article-filter-empty-title">No matching posts right now</span>
+        <span class="x-article-filter-empty-copy">minimal-x is only showing X Articles${' '}or strict quality posts. If you want to inspect the full feed, use “Show all on this page”.</span>
+      `;
+    }
+    if (!empty.parentElement || empty.parentElement !== parent) {
+      parent.prepend(empty);
+    }
+    return empty;
+  }
+
   function showOverlay() {
     ensureOverlay().setAttribute('data-visible', 'true');
   }
@@ -90,6 +120,16 @@
   function hideOverlay() {
     const overlay = document.getElementById(OVERLAY_ID);
     if (overlay) overlay.setAttribute('data-visible', 'false');
+  }
+
+  function showEmptyState(parent) {
+    const empty = ensureEmptyState(parent);
+    if (empty) empty.setAttribute('data-visible', 'true');
+  }
+
+  function hideEmptyState() {
+    const empty = document.getElementById(EMPTY_STATE_ID);
+    if (empty) empty.setAttribute('data-visible', 'false');
   }
 
   function markPending(container) {
@@ -111,13 +151,17 @@
 
   function clearAll() {
     document.querySelectorAll(`[${FILTERED_ATTR}], [${PENDING_ATTR}]`).forEach(clearContainer);
+    hideEmptyState();
   }
 
   window.XArticleFilterDOM = {
     ensureStyles,
     ensureOverlay,
+    ensureEmptyState,
     showOverlay,
     hideOverlay,
+    showEmptyState,
+    hideEmptyState,
     markPending,
     applyToContainer,
     clearContainer,

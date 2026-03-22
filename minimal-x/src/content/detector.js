@@ -12,6 +12,17 @@
     return node.closest('article,[data-testid="tweet"]');
   }
 
+  function getFeedRowContainer(node) {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE) return null;
+    const article = getPostContainer(node);
+    const base = article || node;
+    return base.closest('[data-testid="cellInnerDiv"]') || article || null;
+  }
+
+  function getTimelineRoot(root = document) {
+    return root.querySelector('[aria-label^="Timeline:"],[data-testid="primaryColumn"] section') || null;
+  }
+
   function getCandidateContainers(root = document) {
     const seen = new Set();
     return Array.from(root.querySelectorAll('article,[data-testid="tweet"]')).filter((node) => {
@@ -19,6 +30,15 @@
       seen.add(node);
       return isFeedPost(node);
     });
+  }
+
+  function getCandidateRows(root = document) {
+    const rows = new Set();
+    getCandidateContainers(root).forEach((container) => {
+      const row = getFeedRowContainer(container);
+      if (row) rows.add(row);
+    });
+    return Array.from(rows);
   }
 
   function isFeedPost(container) {
@@ -190,7 +210,10 @@
 
   window.XArticleFilterDetector = {
     getPostContainer,
+    getFeedRowContainer,
+    getTimelineRoot,
     getCandidateContainers,
+    getCandidateRows,
     getClassificationSignature,
     isArticle,
     isQualityPost
