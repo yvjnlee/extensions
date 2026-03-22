@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "X Article Filter",
+  "version": "0.1.0",
+  "description": "Show only X built-in Articles by hiding or collapsing non-article posts across x.com.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*"
+  ],
+  "action": {
+    "default_title": "X Article Filter",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "src/shared/storage.js",
+        "src/content/detector.js",
+        "src/content/filter.js",
+        "src/content/page-controls.js",
+        "src/content/main.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
