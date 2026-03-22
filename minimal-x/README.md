@@ -12,6 +12,7 @@ A cross-browser WebExtension for Firefox and Chrome that reduces noise on X by s
 - Aggressively pre-hides feed rows until classified, then reveals only allowed content
 - Filters the outer timeline row so X does not leave large empty post shells behind
 - Once a post is filtered, it stays hidden for the page session unless you click **Show all on this page**
+- After the initial pass, new filtering batches only run when you use X's own “show more posts” style controls or navigate to a new page
 - Shows a clean empty state when no matching posts are available
 - Uses a loading overlay on initial load/navigation to reduce scrollbar jitter during X re-renders
 - Popup toggle for enabling/disabling filtering

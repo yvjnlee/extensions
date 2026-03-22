@@ -33,7 +33,7 @@
   let pendingRoots = new Set();
   let lastPath = location.pathname + location.search;
   let processed = new WeakMap();
-  let overlayAllowed = true;
+  let manualBatchArmed = false;
 
   const QUIET_WINDOW_MS = 220;
   const MAX_BATCH_WAIT_MS = 900;
@@ -112,7 +112,7 @@
       updateEmptyState();
     } finally {
       hideOverlay();
-      overlayAllowed = false;
+      manualBatchArmed = false;
     }
   }
 
@@ -124,7 +124,7 @@
       hideCandidates(validRoot);
     }
 
-    if (options.withOverlay && settings.enabled && !pageBypass && overlayAllowed) {
+    if (options.withOverlay && settings.enabled && !pageBypass) {
       showOverlay();
     }
 
@@ -138,7 +138,7 @@
 
   function showAllOnPage() {
     pageBypass = true;
-    overlayAllowed = false;
+    manualBatchArmed = false;
     if (quietTimer) window.clearTimeout(quietTimer);
     if (batchTimer) window.clearTimeout(batchTimer);
     quietTimer = null;
@@ -147,9 +147,37 @@
     clearAll();
   }
 
+  function armManualBatch() {
+    if (pageBypass || !settings.enabled) return;
+    manualBatchArmed = true;
+    const timelineRoot = getTimelineRoot(document) || document;
+    hideCandidates(timelineRoot);
+    scheduleBatch(timelineRoot, { withOverlay: false });
+  }
+
+  function isManualLoadMoreTrigger(target) {
+    const trigger = target?.closest?.('button,a,[role="button"]');
+    if (!trigger) return false;
+
+    const text = [
+      trigger.textContent,
+      trigger.getAttribute('aria-label'),
+      trigger.getAttribute('title')
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    return /show\s+(more|new|\d+)\s+posts?/.test(text) || /load\s+more/.test(text);
+  }
+
   function attachObserver() {
     observer?.disconnect();
     observer = new MutationObserver((mutations) => {
+      if (!manualBatchArmed) return;
+
       let sawRelevantMutation = false;
 
       for (const mutation of mutations) {
@@ -179,15 +207,26 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  function attachClickListener() {
+    document.addEventListener('click', (event) => {
+      if (isManualLoadMoreTrigger(event.target)) {
+        window.setTimeout(() => {
+          armManualBatch();
+        }, 0);
+      }
+    }, true);
+  }
+
   function resetBypassOnNavigation() {
     window.setInterval(() => {
       const current = location.pathname + location.search;
       if (current !== lastPath) {
         lastPath = current;
         pageBypass = false;
-        overlayAllowed = true;
         processed = new WeakMap();
-        scheduleBatch(getTimelineRoot(document) || document, { withOverlay: true });
+        const timelineRoot = getTimelineRoot(document) || document;
+        hideCandidates(timelineRoot);
+        scheduleBatch(timelineRoot, { withOverlay: true });
       }
     }, 500);
   }
@@ -199,7 +238,7 @@
     if (!settings.enabled) {
       clearAll();
       hideOverlay();
-      overlayAllowed = false;
+      manualBatchArmed = false;
       return;
     }
 
@@ -228,10 +267,10 @@
     if (timelineRoot) ensureEmptyState(timelineRoot);
 
     await refreshSettings();
-    overlayAllowed = true;
     hideCandidates(timelineRoot || document);
     scheduleBatch(timelineRoot || document, { withOverlay: true });
     attachObserver();
+    attachClickListener();
     listenForChanges();
     resetBypassOnNavigation();
   }
