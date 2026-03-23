@@ -28,7 +28,7 @@
   const QUIET_WINDOW_MS = 140;
   const MAX_BATCH_WAIT_MS = 700;
 
-  let settings = { enabled: true, mode: 'hide', feedMode: 'articles' };
+  let settings = { enabled: true, mode: 'hide' };
   let observer = null;
   let quietTimer = null;
   let batchTimer = null;
@@ -37,9 +37,7 @@
   let processed = new WeakMap();
 
   function shouldShow(container) {
-    if (isArticle(container)) return true;
-    if (settings.feedMode === 'network' && isNetworkPost(container)) return true;
-    return false;
+    return isArticle(container) || isNetworkPost(container);
   }
 
   function clearUserVisible(root = document) {
@@ -72,7 +70,7 @@
     }
 
     const signature = getClassificationSignature(container);
-    const cacheKey = `${signature}::${settings.enabled}:${settings.feedMode}`;
+    const cacheKey = `${signature}::${settings.enabled}`;
     if (processed.get(row) === cacheKey) {
       row.removeAttribute('data-x-article-pending');
       return row.getAttribute('data-x-article-filtered') !== 'hide';
@@ -238,7 +236,6 @@
 
   async function refreshSettings(options = {}) {
     settings = await getSettings();
-    if (settings.feedMode === 'quality') settings.feedMode = 'network';
     processed = new WeakMap();
 
     if (!settings.enabled) {
@@ -257,7 +254,7 @@
   function listenForChanges() {
     api.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
-      if (changes.enabled || changes.mode || changes.feedMode) refreshSettings();
+      if (changes.enabled || changes.mode) refreshSettings();
     });
 
     api.runtime.onMessage.addListener((message) => {

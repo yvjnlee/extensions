@@ -7,11 +7,8 @@
   }
 
   function render(settings) {
-    const networkSelected = settings.feedMode === 'network' || settings.feedMode === 'quality';
     setPressed(els.enabledButton, settings.enabled);
     els.enabledButton.textContent = settings.enabled ? 'On' : 'Off';
-    setPressed(els.articlesMode, settings.feedMode === 'articles');
-    setPressed(els.networkMode, networkSelected);
   }
 
   async function withActiveTab(callback) {
@@ -33,8 +30,7 @@
   async function save() {
     const settings = {
       enabled: els.enabledButton.getAttribute('aria-pressed') === 'true',
-      mode: 'hide',
-      feedMode: els.articlesMode.getAttribute('aria-pressed') === 'true' ? 'articles' : 'network'
+      mode: 'hide'
     };
     await setSettings(settings);
     els.status.textContent = 'Saved.';
@@ -43,8 +39,6 @@
 
   async function init() {
     els.enabledButton = document.getElementById('enabledButton');
-    els.articlesMode = document.getElementById('articlesMode');
-    els.networkMode = document.getElementById('networkMode');
     els.showAllButton = document.getElementById('showAllButton');
     els.saveButton = document.getElementById('saveButton');
     els.status = document.getElementById('status');
@@ -55,18 +49,6 @@
       const next = els.enabledButton.getAttribute('aria-pressed') !== 'true';
       setPressed(els.enabledButton, next);
       els.enabledButton.textContent = next ? 'On' : 'Off';
-      els.status.textContent = '';
-    });
-
-    els.articlesMode.addEventListener('click', () => {
-      setPressed(els.articlesMode, true);
-      setPressed(els.networkMode, false);
-      els.status.textContent = '';
-    });
-
-    els.networkMode.addEventListener('click', () => {
-      setPressed(els.articlesMode, false);
-      setPressed(els.networkMode, true);
       els.status.textContent = '';
     });
 

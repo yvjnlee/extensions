@@ -107,7 +107,7 @@
       empty.setAttribute('data-visible', 'false');
       empty.innerHTML = `
         <span class="x-article-filter-empty-title">No matching posts right now</span>
-        <span class="x-article-filter-empty-copy">minimal-x is only showing X Articles${' '}or posts from your network. Scroll a little or switch feed mode if you want a broader mix.</span>
+        <span class="x-article-filter-empty-copy">minimal-x is showing X Articles and posts from your network. Scroll a little to load more.</span>
       `;
     }
     if (!empty.parentElement || empty.parentElement !== parent) {

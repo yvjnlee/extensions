@@ -1,13 +1,10 @@
 # minimal-x
 
-A cross-browser WebExtension for Firefox and Chrome that reduces noise on X by showing only **X built-in Articles** or, optionally, **posts from your network**.
+A cross-browser WebExtension for Firefox and Chrome that reduces noise on X by showing **X built-in Articles** and **posts from your network**.
 
 ## Features
 
 - Filters content across `x.com` and `twitter.com`
-- Feed modes:
-  - **Articles only**
-  - **Articles + network posts**
 - Filters timeline rows directly to avoid leaving empty post shells behind
 - Watches newly loaded posts and classifies them silently in batches
 - Shows a clean empty state when no matching posts are available
@@ -27,7 +24,7 @@ The extension classifies content conservatively:
 3. If uncertain, treats the item as **not** an article
 
 ### Network posts
-In network mode, regular posts are shown when they are from accounts you follow or posts marked as followed by people you follow. Posts from accounts that only follow you are not included.
+Regular posts are shown when they are from accounts you follow or posts marked as followed by people you follow. Posts from accounts that only follow you are not included.
 
 ## Install for development
 
@@ -57,8 +54,7 @@ Artifacts are written to `dist/` as `.zip` and `.xpi`.
 
 1. Open X
 2. Click the extension icon
-3. Choose **Articles only** or **+ Network posts**
-4. If something looks wrong, click **Show all on this page**
+3. If something looks wrong, click **Show all on this page**
 
 ## Permissions
 
