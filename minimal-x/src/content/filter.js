@@ -10,9 +10,12 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      [${PENDING_ATTR}="true"],
-      [${FILTERED_ATTR}="hide"] {
+      [${PENDING_ATTR}="true"] {
         display: none !important;
+      }
+      [${FILTERED_ATTR}="hide"] {
+        visibility: hidden !important;
+        pointer-events: none !important;
       }
       .x-article-filter-control {
         position: fixed;
@@ -104,7 +107,7 @@
       empty.setAttribute('data-visible', 'false');
       empty.innerHTML = `
         <span class="x-article-filter-empty-title">No matching posts right now</span>
-        <span class="x-article-filter-empty-copy">minimal-x is only showing X Articles${' '}or strict quality posts. If you want to inspect the full feed, use “Show all on this page”.</span>
+        <span class="x-article-filter-empty-copy">minimal-x is only showing X Articles${' '}or posts from your network. Scroll a little or switch feed mode if you want a broader mix.</span>
       `;
     }
     if (!empty.parentElement || empty.parentElement !== parent) {

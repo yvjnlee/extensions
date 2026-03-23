@@ -8,7 +8,7 @@
     getCandidateRows,
     getClassificationSignature,
     isArticle,
-    isQualityPost
+    isNetworkPost
   } = window.XArticleFilterDetector;
   const {
     ensureStyles,
@@ -18,55 +18,63 @@
     hideOverlay,
     showEmptyState,
     hideEmptyState,
-    markPending,
     applyToContainer,
     clearContainer,
     clearAll
   } = window.XArticleFilterDOM;
-  const { ensurePageControl } = window.XArticleFilterPageControls;
+  const { ensurePageControl, updatePageControlCount } = window.XArticleFilterPageControls;
+
+  const USER_VISIBLE_ATTR = 'data-x-article-user-visible';
+  const QUIET_WINDOW_MS = 140;
+  const MAX_BATCH_WAIT_MS = 700;
 
   let settings = { enabled: true, mode: 'hide', feedMode: 'articles' };
-  let pageBypass = false;
   let observer = null;
   let quietTimer = null;
   let batchTimer = null;
   let pendingRoots = new Set();
   let lastPath = location.pathname + location.search;
   let processed = new WeakMap();
-  let manualBatchArmed = false;
-
-  const QUIET_WINDOW_MS = 220;
-  const MAX_BATCH_WAIT_MS = 900;
 
   function shouldShow(container) {
     if (isArticle(container)) return true;
-    if (settings.feedMode === 'quality' && isQualityPost(container)) return true;
+    if (settings.feedMode === 'network' && isNetworkPost(container)) return true;
     return false;
   }
 
-  function hideCandidates(root = document) {
-    getCandidateRows(root).forEach((row) => {
-      if (!pageBypass && settings.enabled) markPending(row);
+  function clearUserVisible(root = document) {
+    root.querySelectorAll(`[${USER_VISIBLE_ATTR}="true"]`).forEach((el) => {
+      el.removeAttribute(USER_VISIBLE_ATTR);
     });
+  }
+
+  function getContainersForRoot(root) {
+    if (root instanceof Element) {
+      const ownContainer = getPostContainer(root);
+      if (ownContainer) return [ownContainer];
+    }
+    return getCandidateContainers(root);
   }
 
   function processContainer(container) {
     if (!(container instanceof Element)) return false;
     const row = getFeedRowContainer(container) || container;
 
-    if (pageBypass || !settings.enabled) {
+    if (!settings.enabled) {
       clearContainer(row);
+      row.removeAttribute(USER_VISIBLE_ATTR);
       return true;
     }
 
-    if (row.getAttribute('data-x-article-filtered') === 'hide') {
+    if (row.getAttribute(USER_VISIBLE_ATTR) === 'true') {
       row.removeAttribute('data-x-article-pending');
-      return false;
+      return true;
     }
 
     const signature = getClassificationSignature(container);
-    const cacheKey = `${signature}::${settings.enabled}:${settings.feedMode}:${pageBypass}`;
+    const cacheKey = `${signature}::${settings.enabled}:${settings.feedMode}`;
     if (processed.get(row) === cacheKey) {
+      row.removeAttribute('data-x-article-pending');
       return row.getAttribute('data-x-article-filtered') !== 'hide';
     }
     processed.set(row, cacheKey);
@@ -82,8 +90,9 @@
 
   function updateEmptyState() {
     const timelineRoot = getTimelineRoot(document);
-    if (!timelineRoot || pageBypass || !settings.enabled) {
+    if (!timelineRoot || !settings.enabled) {
       hideEmptyState();
+      updatePageControlCount();
       return;
     }
 
@@ -91,11 +100,13 @@
     const rows = getCandidateRows(timelineRoot);
     const hasVisibleMatch = rows.some((row) => row.getAttribute('data-x-article-filtered') !== 'hide');
 
+    updatePageControlCount();
+
     if (rows.length > 0 && !hasVisibleMatch) {
       showEmptyState(timelineRoot);
-    } else {
-      hideEmptyState();
+      return;
     }
+    hideEmptyState();
   }
 
   function flushBatch() {
@@ -107,24 +118,21 @@
 
     try {
       for (const root of roots) {
-        getCandidateContainers(root).forEach(processContainer);
+        getContainersForRoot(root).forEach(processContainer);
       }
       updateEmptyState();
     } finally {
       hideOverlay();
-      manualBatchArmed = false;
     }
   }
 
   function scheduleBatch(root = document, options = {}) {
     const validRoot = root instanceof Element || root instanceof Document ? root : document;
-    pendingRoots.add(validRoot);
-
-    if (settings.enabled && !pageBypass) {
-      hideCandidates(validRoot);
+    if (options.addRoot !== false) {
+      pendingRoots.add(validRoot);
     }
 
-    if (options.withOverlay && settings.enabled && !pageBypass) {
+    if (options.withOverlay && settings.enabled) {
       showOverlay();
     }
 
@@ -136,113 +144,114 @@
     }
   }
 
+  function showMore(count = 35) {
+    const timelineRoot = getTimelineRoot(document);
+    if (!timelineRoot) return;
+
+    const rows = getCandidateRows(timelineRoot)
+      .filter((row) => row.getAttribute('data-x-article-filtered') === 'hide')
+      .slice(0, count);
+
+    rows.forEach((row) => {
+      clearContainer(row);
+      row.setAttribute(USER_VISIBLE_ATTR, 'true');
+    });
+
+    updateEmptyState();
+  }
+
   function showAllOnPage() {
-    pageBypass = true;
-    manualBatchArmed = false;
-    if (quietTimer) window.clearTimeout(quietTimer);
-    if (batchTimer) window.clearTimeout(batchTimer);
-    quietTimer = null;
-    batchTimer = null;
-    hideOverlay();
-    clearAll();
+    showMore(Number.MAX_SAFE_INTEGER);
   }
 
-  function armManualBatch() {
-    if (pageBypass || !settings.enabled) return;
-    manualBatchArmed = true;
-    const timelineRoot = getTimelineRoot(document) || document;
-    hideCandidates(timelineRoot);
-    scheduleBatch(timelineRoot, { withOverlay: false });
-  }
-
-  function isManualLoadMoreTrigger(target) {
-    const trigger = target?.closest?.('button,a,[role="button"]');
-    if (!trigger) return false;
-
-    const text = [
-      trigger.textContent,
-      trigger.getAttribute('aria-label'),
-      trigger.getAttribute('title')
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
-
-    return /show\s+(more|new|\d+)\s+posts?/.test(text) || /load\s+more/.test(text);
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function attachObserver() {
     observer?.disconnect();
     observer = new MutationObserver((mutations) => {
-      if (!manualBatchArmed) return;
+      if (!settings.enabled) return;
+      const timelineRoot = getTimelineRoot(document);
+      if (!timelineRoot) return;
 
       let sawRelevantMutation = false;
 
       for (const mutation of mutations) {
+        const target = mutation.target;
+        if (!(target instanceof Element)) continue;
+        if (target !== timelineRoot && !timelineRoot.contains(target)) continue;
+
         for (const node of mutation.addedNodes) {
           if (!(node instanceof Element)) continue;
+
           const row = getFeedRowContainer(node);
           if (row) {
-            markPending(row);
             pendingRoots.add(row);
             sawRelevantMutation = true;
           }
 
           const nestedRows = getCandidateRows(node);
           if (nestedRows.length) {
-            nestedRows.forEach(markPending);
-            pendingRoots.add(node);
+            nestedRows.forEach((nestedRow) => pendingRoots.add(nestedRow));
             sawRelevantMutation = true;
           }
         }
       }
 
       if (sawRelevantMutation) {
-        scheduleBatch(getTimelineRoot(document) || document, { withOverlay: false });
+        scheduleBatch(timelineRoot, { withOverlay: false, addRoot: false });
       }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  function attachClickListener() {
-    document.addEventListener('click', (event) => {
-      if (isManualLoadMoreTrigger(event.target)) {
-        window.setTimeout(() => {
-          armManualBatch();
-        }, 0);
-      }
-    }, true);
+  function runNavigationPass() {
+    const current = location.pathname + location.search;
+    if (current === lastPath) return;
+
+    lastPath = current;
+    processed = new WeakMap();
+    clearUserVisible(document);
+
+    const timelineRoot = getTimelineRoot(document) || document;
+    scheduleBatch(timelineRoot, { withOverlay: true });
   }
 
-  function resetBypassOnNavigation() {
-    window.setInterval(() => {
-      const current = location.pathname + location.search;
-      if (current !== lastPath) {
-        lastPath = current;
-        pageBypass = false;
-        processed = new WeakMap();
-        const timelineRoot = getTimelineRoot(document) || document;
-        hideCandidates(timelineRoot);
-        scheduleBatch(timelineRoot, { withOverlay: true });
-      }
-    }, 500);
+  function attachNavigationListener() {
+    const push = history.pushState;
+    const replace = history.replaceState;
+
+    history.pushState = function (...args) {
+      push.apply(this, args);
+      window.setTimeout(runNavigationPass, 0);
+    };
+
+    history.replaceState = function (...args) {
+      replace.apply(this, args);
+      window.setTimeout(runNavigationPass, 0);
+    };
+
+    window.addEventListener('popstate', runNavigationPass);
   }
 
-  async function refreshSettings() {
+  async function refreshSettings(options = {}) {
     settings = await getSettings();
+    if (settings.feedMode === 'quality') settings.feedMode = 'network';
     processed = new WeakMap();
 
     if (!settings.enabled) {
       clearAll();
+      clearUserVisible(document);
       hideOverlay();
-      manualBatchArmed = false;
+      updatePageControlCount();
       return;
     }
 
-    scheduleBatch(getTimelineRoot(document) || document, { withOverlay: false });
+    if (!options.skipBatch) {
+      scheduleBatch(getTimelineRoot(document) || document, { withOverlay: false });
+    }
   }
 
   function listenForChanges() {
@@ -261,18 +270,20 @@
   async function init() {
     ensureStyles();
     ensureOverlay();
-    ensurePageControl(showAllOnPage);
+    ensurePageControl(scrollToTop);
 
     const timelineRoot = getTimelineRoot(document);
     if (timelineRoot) ensureEmptyState(timelineRoot);
 
-    await refreshSettings();
-    hideCandidates(timelineRoot || document);
-    scheduleBatch(timelineRoot || document, { withOverlay: true });
+    await refreshSettings({ skipBatch: true });
+
+    if (settings.enabled) {
+      scheduleBatch(timelineRoot || document, { withOverlay: true });
+    }
+
     attachObserver();
-    attachClickListener();
+    attachNavigationListener();
     listenForChanges();
-    resetBypassOnNavigation();
   }
 
   if (document.readyState === 'loading') {

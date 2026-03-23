@@ -1,22 +1,20 @@
 # minimal-x
 
-A cross-browser WebExtension for Firefox and Chrome that reduces noise on X by showing only **X built-in Articles** or, optionally, **strict high-signal posts**.
+A cross-browser WebExtension for Firefox and Chrome that reduces noise on X by showing only **X built-in Articles** or, optionally, **posts from your network**.
 
 ## Features
 
 - Filters content across `x.com` and `twitter.com`
 - Feed modes:
   - **Articles only**
-  - **Articles + quality posts**
-- Fully hides filtered posts
-- Aggressively pre-hides feed rows until classified, then reveals only allowed content
-- Filters the outer timeline row so X does not leave large empty post shells behind
-- Once a post is filtered, it stays hidden for the page session unless you click **Show all on this page**
-- After the initial pass, new filtering batches only run when you use X's own “show more posts” style controls or navigate to a new page
+  - **Articles + network posts**
+- Filters timeline rows directly to avoid leaving empty post shells behind
+- Watches newly loaded posts and classifies them silently in batches
 - Shows a clean empty state when no matching posts are available
-- Uses a loading overlay on initial load/navigation to reduce scrollbar jitter during X re-renders
+- Uses a loading overlay on initial load/navigation
 - Popup toggle for enabling/disabling filtering
-- **Show all on this page** escape hatch
+- **Show all on this page** escape hatch in popup
+- Floating **Scroll to top** button while scrolling
 - Local-only settings storage
 - No telemetry, no remote APIs, no external code
 
@@ -28,12 +26,8 @@ The extension classifies content conservatively:
 2. Falls back to structural heuristics
 3. If uncertain, treats the item as **not** an article
 
-### Quality posts
-In quality mode, regular posts must pass a strict score based on:
-- substance and length
-- engagement signals
-- source quality hints
-- penalties for replies and spammy patterns
+### Network posts
+In network mode, regular posts are shown when they are from accounts you follow or posts marked as followed by people you follow. Posts from accounts that only follow you are not included.
 
 ## Install for development
 
@@ -63,7 +57,7 @@ Artifacts are written to `dist/` as `.zip` and `.xpi`.
 
 1. Open X
 2. Click the extension icon
-3. Choose **Articles only** or **+ Quality posts**
+3. Choose **Articles only** or **+ Network posts**
 4. If something looks wrong, click **Show all on this page**
 
 ## Permissions
@@ -80,4 +74,4 @@ See [SECURITY.md](SECURITY.md).
 
 - Detection relies on X DOM structure and labels
 - X may ship UI changes that break article detection
-- Engagement parsing on X is heuristic, so quality mode is best-effort
+- Network label parsing on X is heuristic, so network mode is best-effort
