@@ -1,4 +1,5 @@
 dist/
+docs/
 .DS_Store
 *.zip
 *.xpi
