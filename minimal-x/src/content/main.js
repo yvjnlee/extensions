@@ -36,6 +36,24 @@
   let lastPath = location.pathname + location.search;
   let processed = new WeakMap();
 
+  function isFeedRoute() {
+    const path = (location.pathname || '').toLowerCase();
+    return path === '/home' || path.startsWith('/home/');
+  }
+
+  function clearFilteringState() {
+    clearAll();
+    clearUserVisible(document);
+    hideOverlay();
+    hideEmptyState();
+    updatePageControlCount();
+    pendingRoots = new Set();
+    if (quietTimer) window.clearTimeout(quietTimer);
+    if (batchTimer) window.clearTimeout(batchTimer);
+    quietTimer = null;
+    batchTimer = null;
+  }
+
   function shouldShow(container) {
     return isArticle(container) || isNetworkPost(container);
   }
@@ -88,7 +106,7 @@
 
   function updateEmptyState() {
     const timelineRoot = getTimelineRoot(document);
-    if (!timelineRoot || !settings.enabled) {
+    if (!timelineRoot || !settings.enabled || !isFeedRoute()) {
       hideEmptyState();
       updatePageControlCount();
       return;
@@ -169,7 +187,7 @@
   function attachObserver() {
     observer?.disconnect();
     observer = new MutationObserver((mutations) => {
-      if (!settings.enabled) return;
+      if (!settings.enabled || !isFeedRoute()) return;
       const timelineRoot = getTimelineRoot(document);
       if (!timelineRoot) return;
 
@@ -213,6 +231,11 @@
     processed = new WeakMap();
     clearUserVisible(document);
 
+    if (!settings.enabled || !isFeedRoute()) {
+      clearFilteringState();
+      return;
+    }
+
     const timelineRoot = getTimelineRoot(document) || document;
     scheduleBatch(timelineRoot, { withOverlay: true });
   }
@@ -238,11 +261,8 @@
     settings = await getSettings();
     processed = new WeakMap();
 
-    if (!settings.enabled) {
-      clearAll();
-      clearUserVisible(document);
-      hideOverlay();
-      updatePageControlCount();
+    if (!settings.enabled || !isFeedRoute()) {
+      clearFilteringState();
       return;
     }
 
@@ -274,7 +294,7 @@
 
     await refreshSettings({ skipBatch: true });
 
-    if (settings.enabled) {
+    if (settings.enabled && isFeedRoute()) {
       scheduleBatch(timelineRoot || document, { withOverlay: true });
     }
 
