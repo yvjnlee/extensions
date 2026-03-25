@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>minimal-x</title>
+  <title>minimal-youtube</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -12,15 +12,15 @@
       --muted: color-mix(in srgb, CanvasText 58%, transparent);
       --surface: color-mix(in srgb, Canvas 92%, transparent);
       --surface-2: color-mix(in srgb, CanvasText 4%, Canvas);
-      --accent: #1d9bf0;
-      --accent-soft: color-mix(in srgb, var(--accent) 12%, Canvas);
+      --accent: #ff0033;
+      --accent-soft: color-mix(in srgb, var(--accent) 10%, Canvas);
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      width: 352px;
+      width: 336px;
       padding: 14px;
       font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: Canvas;
@@ -46,28 +46,16 @@
       background: var(--surface);
     }
 
-    .fetch {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 14px;
-      align-items: start;
-    }
-
-    .ascii,
-    .meta {
-      margin: 0;
+    .ascii {
+      margin: 0 0 10px;
       white-space: pre;
       overflow: hidden;
-      font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       color: color-mix(in srgb, CanvasText 84%, transparent);
     }
 
-    .meta {
-      overflow: visible;
-    }
-
     h1 {
-      margin: 10px 0 0;
+      margin: 0;
       font-size: 14px;
       font-weight: 600;
       letter-spacing: 0.02em;
@@ -111,13 +99,6 @@
       margin: 4px 0 0;
       color: var(--muted);
       font-size: 12px;
-      max-width: 180px;
-    }
-
-    .stack {
-      display: grid;
-      gap: 10px;
-      margin-top: 12px;
     }
 
     button {
@@ -147,20 +128,12 @@
       color: white;
     }
 
-    .ghost,
-    .primary {
-      width: 100%;
-      border-radius: 12px;
-    }
-
     .ghost {
-      background: transparent;
-    }
-
-    .primary {
+      width: 100%;
+      margin-top: 12px;
+      border-radius: 12px;
       background: var(--accent-soft);
       border-color: color-mix(in srgb, var(--accent) 22%, transparent);
-      font-weight: 600;
     }
 
     .status {
@@ -173,20 +146,13 @@
 </head>
 <body>
   <main class="shell">
-    <section class="brand" aria-label="minimal-x brand">
-      <div class="fetch">
-        <pre class="ascii"> /\\_/\\
-(=^.^=)
- (")(")</pre>
-        <pre class="meta">minimal.x
-──────────
-site:     x.com
-module:   home feed
-filter:   articles
-status:   ready</pre>
-      </div>
-      <h1>minimal-x</h1>
-      <p class="subtext">Fast, quiet, and a little cat-powered.</p>
+    <section class="brand" aria-label="minimal-youtube brand">
+      <pre class="ascii">┌──────────────────────┐
+│  minimal.youtube    │
+│  home + shorts off  │
+└──────────────────────┘</pre>
+      <h1>minimal-youtube</h1>
+      <p class="subtext">A quieter front page. Less bait, more intent.</p>
     </section>
 
     <section class="panel">
@@ -194,16 +160,13 @@ status:   ready</pre>
         <div>
           <p class="eyebrow">State</p>
           <p class="label">Filtering</p>
-          <p class="hint">Uses the current calmer-feed filter on X.</p>
+          <p class="hint">Blocks Home and Shorts.</p>
         </div>
         <button id="enabledButton" class="toggle" type="button" aria-pressed="true">On</button>
       </div>
     </section>
 
-    <div class="stack">
-      <button id="showAllButton" class="ghost" type="button">Show everything on this page</button>
-      <button id="saveButton" class="primary" type="button">Save settings</button>
-    </div>
+    <button id="showAllButton" class="ghost" type="button">Show everything on this page</button>
     <div id="status" class="status" aria-live="polite"></div>
   </main>
 

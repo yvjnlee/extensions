@@ -1,0 +1,6 @@
+minimal.name
+────────────
+site:     example.com
+module:   home feed
+status:   paused
+next:     subscriptions

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "minimal-x",
   "version": "0.2.0",
-  "description": "Reduce noise on X by showing only built-in Articles or strict high-signal posts.",
+  "description": "Reduce noise on X with a calmer feed filter and a minimal terminal-style UI.",
   "permissions": ["storage", "tabs"],
   "host_permissions": [
     "https://x.com/*",
@@ -10,19 +10,7 @@
   ],
   "action": {
     "default_title": "minimal-x",
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
-    }
-  },
-  "icons": {
-    "16": "icons/icon-16.png",
-    "32": "icons/icon-32.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
+    "default_popup": "popup.html"
   },
   "content_scripts": [
     {

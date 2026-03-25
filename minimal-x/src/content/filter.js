@@ -48,30 +48,56 @@
       }
       #${OVERLAY_ID} .x-article-filter-overlay-card,
       #${EMPTY_STATE_ID} {
+        --minimal-x-fg: #0f1115;
+        --minimal-x-link: #3a5a7a;
         min-width: 220px;
-        padding: 18px 20px;
-        border-radius: 16px;
-        background: color-mix(in srgb, Canvas 92%, transparent);
-        border: 1px solid color-mix(in srgb, CanvasText 10%, transparent);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.18);
-        font: 13px/1.45 system-ui, sans-serif;
-        color: CanvasText;
+        padding: 0;
+        background: transparent;
+        font: 13px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        color: var(--minimal-x-fg);
         text-align: center;
       }
-      #${OVERLAY_ID} .x-article-filter-overlay-title,
-      #${EMPTY_STATE_ID} .x-article-filter-empty-title {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 600;
+      @media (prefers-color-scheme: dark) {
+        #${OVERLAY_ID} .x-article-filter-overlay-card,
+        #${EMPTY_STATE_ID} {
+          --minimal-x-fg: #f3f4f6;
+          --minimal-x-link: #9fc7ea;
+        }
       }
-      #${OVERLAY_ID} .x-article-filter-overlay-copy,
+      #${OVERLAY_ID} .x-article-filter-frame,
+      #${EMPTY_STATE_ID} .x-article-filter-frame {
+        display: inline-grid;
+        grid-template-columns: auto auto;
+        gap: 16px;
+        align-items: start;
+        text-align: left;
+      }
+      #${OVERLAY_ID} .x-article-filter-logo,
+      #${OVERLAY_ID} .x-article-filter-meta,
+      #${EMPTY_STATE_ID} .x-article-filter-logo,
+      #${EMPTY_STATE_ID} .x-article-filter-meta,
       #${EMPTY_STATE_ID} .x-article-filter-empty-copy {
-        color: GrayText;
+        margin: 0;
+        white-space: pre;
+        color: var(--minimal-x-fg);
       }
       #${EMPTY_STATE_ID} {
         display: none;
-        margin: 16px auto;
-        max-width: 460px;
+        margin: 24px auto;
+        max-width: 560px;
+      }
+      #${EMPTY_STATE_ID} .x-article-filter-empty-copy {
+        display: block;
+        margin-top: 10px;
+        color: var(--minimal-x-link);
+      }
+      @media (max-width: 720px) {
+        #${OVERLAY_ID} .x-article-filter-frame,
+        #${EMPTY_STATE_ID} .x-article-filter-frame {
+          grid-template-columns: 1fr;
+          justify-items: center;
+          gap: 10px;
+        }
       }
       #${EMPTY_STATE_ID}[data-visible="true"] {
         display: block;
@@ -90,8 +116,17 @@
     overlay.setAttribute('aria-hidden', 'true');
     overlay.innerHTML = `
       <div class="x-article-filter-overlay-card" role="status" aria-live="polite">
-        <span class="x-article-filter-overlay-title">minimal-x is filtering your feed</span>
-        <span class="x-article-filter-overlay-copy">Finding articles and high-signal posts…</span>
+        <div class="x-article-filter-frame">
+          <pre class="x-article-filter-logo"> /\\_/\\
+(=^.^=)
+ (")(")</pre>
+          <pre class="x-article-filter-meta">minimal.x
+──────────
+site:     x.com
+module:   home feed
+filter:   current rules
+status:   scanning</pre>
+        </div>
       </div>
     `;
     document.documentElement.appendChild(overlay);
@@ -106,8 +141,18 @@
       empty.id = EMPTY_STATE_ID;
       empty.setAttribute('data-visible', 'false');
       empty.innerHTML = `
-        <span class="x-article-filter-empty-title">No matching posts right now</span>
-        <span class="x-article-filter-empty-copy">minimal-x is showing X Articles and posts from your network. Scroll a little to load more.</span>
+        <div class="x-article-filter-frame">
+          <pre class="x-article-filter-logo"> /\\_/\\
+(=^.^=)
+ (")(")</pre>
+          <pre class="x-article-filter-meta">minimal.x
+──────────
+site:     x.com
+module:   home feed
+filter:   current rules
+status:   none found</pre>
+        </div>
+        <span class="x-article-filter-empty-copy">scroll a little or use show everything on this page</span>
       `;
     }
     if (!empty.parentElement || empty.parentElement !== parent) {
