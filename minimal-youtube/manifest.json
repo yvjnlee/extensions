@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "minimal-youtube",
+  "version": "0.1.0",
+  "description": "Hide YouTube Home and Shorts surfaces.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtube.com/*"
+  ],
+  "action": {
+    "default_title": "minimal-youtube",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*"
+      ],
+      "js": [
+        "src/shared/storage.js",
+        "src/content/main.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

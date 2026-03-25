@@ -1,13 +1,23 @@
 # Minimal Extensions
 
-A small open-source monorepo for calm, less-distracting browser extensions.
+```text
+ /\_/\\
+(=^.^=)
+ (")(")
+
+minimal.extensions
+```
+
+A small open-source monorepo for browser extensions that remove noise instead of adding more software-shaped noise.
 
 ## Layout
 
-- `minimal-x/` — show only X built-in Articles on x.com
-- `docs/` — design specs and notes
-- `scripts/` — shared development and packaging scripts
-- `dist/` — packaged build artifacts (generated)
+- `minimal-x/` — keep X calm with the current feed filter and a fastfetch-style UI
+- `minimal-youtube/` — remove YouTube Home and Shorts with a terminal-like pause screen
+- `shared/` — shared ASCII/UI direction and reference assets
+- `docs/` — design notes and specs
+- `scripts/` — packaging and dev helpers
+- `dist/` — generated build artifacts
 
 ## Principles
 
@@ -15,16 +25,23 @@ A small open-source monorepo for calm, less-distracting browser extensions.
 - local-first settings
 - no telemetry
 - no remote code
-- simple packaging and testing
+- fast to inspect
+- easy to package
+- monospace-first, low-noise UI
 
 ## Extensions
 
 ### minimal-x
 
-Filters X so only built-in Articles remain visible.
+A quieter X. Keep the current filtering behavior, but present it with a cleaner cat/fastfetch-style UI.
 
-Future line ideas:
-- `minimal-youtube`
+### minimal-youtube
+
+A quieter YouTube. Home is replaced with a pause screen. Shorts disappear. The in-page UI leans terminal/minimal rather than app-like.
+
+## Direction
+
+Likely next:
 - `minimal-linkedin`
 
-See `minimal-x/README.md` for install and usage.
+See each extension README for install and usage details.
