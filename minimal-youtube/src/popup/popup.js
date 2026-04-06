@@ -23,7 +23,7 @@
     }
   }
 
-  async function persist() {
+  async function save() {
     await setSettings({ enabled: els.enabledButton.getAttribute('aria-pressed') === 'true' });
     await notifyContent('refresh');
     els.status.textContent = 'Saved.';
@@ -32,21 +32,24 @@
   async function init() {
     els.enabledButton = document.getElementById('enabledButton');
     els.showAllButton = document.getElementById('showAllButton');
+    els.saveButton = document.getElementById('saveButton');
     els.status = document.getElementById('status');
 
     const settings = await getSettings();
     setPressed(els.enabledButton, settings.enabled);
 
-    els.enabledButton.addEventListener('click', async () => {
+    els.enabledButton.addEventListener('click', () => {
       const next = els.enabledButton.getAttribute('aria-pressed') !== 'true';
       setPressed(els.enabledButton, next);
-      await persist();
+      els.status.textContent = '';
     });
 
     els.showAllButton.addEventListener('click', async () => {
       await notifyContent('showAllOnPage');
       els.status.textContent = 'Showing all content on this page.';
     });
+
+    els.saveButton.addEventListener('click', save);
   }
 
   document.addEventListener('DOMContentLoaded', init, { once: true });

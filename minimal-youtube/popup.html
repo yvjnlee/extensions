@@ -128,12 +128,26 @@
       color: white;
     }
 
-    .ghost {
-      width: 100%;
+    .stack {
+      display: grid;
+      gap: 10px;
       margin-top: 12px;
+    }
+
+    .ghost,
+    .primary {
+      width: 100%;
       border-radius: 12px;
+    }
+
+    .ghost {
+      background: transparent;
+    }
+
+    .primary {
       background: var(--accent-soft);
       border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+      font-weight: 600;
     }
 
     .status {
@@ -166,7 +180,10 @@
       </div>
     </section>
 
-    <button id="showAllButton" class="ghost" type="button">Show everything on this page</button>
+    <div class="stack">
+      <button id="showAllButton" class="ghost" type="button">Show everything on this page</button>
+      <button id="saveButton" class="primary" type="button">Save settings</button>
+    </div>
     <div id="status" class="status" aria-live="polite"></div>
   </main>
 
